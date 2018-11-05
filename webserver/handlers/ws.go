@@ -103,6 +103,9 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	go rooms[roomHash].Run()
 
 	handleGameRoomConnect(c, roomHash, u)
+	if len(rooms[roomHash].users) == 0 {
+		delete(rooms, roomHash)
+	}
 
 	return StatusData{http.StatusOK, map[string]string{"error": "err"}}
 }
@@ -132,12 +135,10 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer c.Close()
 
-	// if _, ok := rooms[roomHash]; !ok {
-	// 	rooms[roomHash] = NewGameRoom()
-	// 	go rooms[roomHash].Run()
-	// }
-
 	handleGameRoomConnect(c, roomHash, u)
+	if len(rooms[roomHash].users) == 0 {
+		delete(rooms, roomHash)
+	}
 
 	return StatusData{http.StatusOK, map[string]string{"error": "err"}}
 }
