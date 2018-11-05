@@ -3,7 +3,7 @@ go:
 - 1.11
 before_script:
 - sudo apt-get install -qq sshpass
-script: 
+script:
 after_success:
 - sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST rm ~/server/game
 - sshpass -p $SSH_PASS scp -rp -o stricthostkeychecking=no * $SSH_USER@$SSH_HOST:~/server/game
