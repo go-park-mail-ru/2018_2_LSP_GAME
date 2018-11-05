@@ -76,7 +76,7 @@ func (game *GameRoom) UserIn(u user.User) bool {
 }
 
 func (game *GameRoom) Join(u user.User) {
-	game.users = append(game.users)
+	game.users = append(game.users, u)
 	game.publish <- newEvent("join", u.Username, "")
 }
 
