@@ -31,7 +31,7 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 	rooms[roomHash].Join(u)
 	defer rooms[roomHash].Leave(u)
 
-	c.WriteJSON(map[string]string{"room": roomHash})
+	c.WriteJSON(map[string]string{"type": "room", "hash": roomHash})
 
 	newCommands := make(chan Command)
 	go func() {
@@ -92,10 +92,10 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer c.Close()
 
-	roomHash := RandStringRunes(5)
+	roomHash := RandStringRunes(15)
 	_, ok := rooms[roomHash]
 	for ok {
-		roomHash = RandStringRunes(5)
+		roomHash = RandStringRunes(15)
 		_, ok = rooms[roomHash]
 	}
 
