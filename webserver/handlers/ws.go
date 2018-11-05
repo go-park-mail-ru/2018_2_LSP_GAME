@@ -77,7 +77,7 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	userID, _ := strconv.Atoi(claims["id"].(string))
 	u, err := user.GetOne(env.DB, userID)
 	if err != nil {
-		return StatusData{http.StatusInternalServerError, map[string]string{"error": "Error getting user from DB"}}
+		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
 	}
 
 	if userAlreadyInGame(u) {
@@ -121,7 +121,7 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	userID, _ := strconv.Atoi(claims["id"].(string))
 	u, err := user.GetOne(env.DB, userID)
 	if err != nil {
-		return StatusData{http.StatusInternalServerError, map[string]string{"error": "Error getting user from DB"}}
+		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
 	}
 
 	c, err := upgrader.Upgrade(w, r, nil)
