@@ -86,6 +86,12 @@ func (game *GameRoom) Execute(user user.User, cmd Command) {
 }
 
 func (game *GameRoom) Leave(u user.User) {
+	for i := 0; i < len(game.users); i++ {
+		if game.users[i].ID == u.ID {
+			game.users = append(game.users[:i], game.users[i+1:]...)
+			break
+		}
+	}
 	game.publish <- newEvent("leave", u.Username, "")
 }
 
