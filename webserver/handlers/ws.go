@@ -129,6 +129,10 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
 	}
 
+	if userAlreadyInGame(u) {
+		return StatusData{http.StatusConflict, map[string]string{"error": "User is alredy in game"}}
+	}
+
 	c, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
 		return err

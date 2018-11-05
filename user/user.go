@@ -93,6 +93,7 @@ type User struct {
 
 func GetOne(db *sql.DB, id int) (User, error) {
 	var u User
+	u.ID = id
 	rows, err := db.Query("SELECT id, username, email, firstname, lastname, rating, avatar FROM users WHERE id = $1 LIMIT 1", id)
 	if err != nil {
 		return u, err
