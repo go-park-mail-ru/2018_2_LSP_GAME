@@ -31,6 +31,8 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 	rooms[roomHash].Join(u)
 	defer rooms[roomHash].Leave(u)
 
+	c.WriteJSON(map[string]string{"room": roomHash})
+
 	newCommands := make(chan Command)
 	go func() {
 		var cmd Command
