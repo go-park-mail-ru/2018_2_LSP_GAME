@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 	"os"
 	"time"
@@ -16,13 +15,11 @@ func Auth(next handlers.HandlerFunc) handlers.HandlerFunc {
 	return func(env *handlers.Env, w http.ResponseWriter, r *http.Request) error {
 		signature, err := r.Cookie("signature")
 		if err != nil {
-			fmt.Println(err)
 			return handlers.StatusData{http.StatusUnauthorized, map[string]string{"error": "No signature cookie found"}}
 		}
 
 		headerPayload, err := r.Cookie("header.payload")
 		if err != nil {
-			fmt.Println(err)
 			return handlers.StatusData{http.StatusUnauthorized, map[string]string{"error": "No headerPayload cookie found"}}
 		}
 
@@ -32,7 +29,6 @@ func Auth(next handlers.HandlerFunc) handlers.HandlerFunc {
 		_, err = jwt.ParseWithClaims(tokenString, claims, func(token *jwt.Token) (interface{}, error) {
 			return []byte(os.Getenv("JWT_TOKEN")), nil
 		})
-		fmt.Println(err)
 
 		if err != nil {
 			signatureCoookie := http.Cookie{

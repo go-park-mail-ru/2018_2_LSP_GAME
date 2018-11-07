@@ -49,16 +49,13 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 		select {
 		case event := <-subscription.New:
 			if c.WriteJSON(&event) != nil {
-				// They disconnected.
 				return nil
 			}
 		case cmd, ok := <-newCommands:
-			// If the channel is closed, they disconnected.
 			if !ok {
 				return nil
 			}
 
-			// Otherwise, say something.
 			rooms[roomHash].Execute(u, cmd)
 		}
 	}
