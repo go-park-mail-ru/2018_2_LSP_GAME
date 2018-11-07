@@ -3,7 +3,6 @@ package handlers
 import (
 	"math/rand"
 	"net/http"
-	"strconv"
 
 	jwt "github.com/dgrijalva/jwt-go"
 	"github.com/go-park-mail-ru/2018_2_LSP_GAME/user"
@@ -76,7 +75,7 @@ func userAlreadyInGame(u user.User) bool {
 
 func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	claims := context.Get(r, "claims").(jwt.MapClaims)
-	userID, _ := strconv.Atoi(claims["id"].(string))
+	userID := int(claims["id"].(float64))
 	u, err := user.GetOne(env.DB, userID)
 	if err != nil {
 		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
@@ -127,7 +126,7 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	claims := context.Get(r, "claims").(jwt.MapClaims)
-	userID, _ := strconv.Atoi(claims["id"].(string))
+	userID := int(claims["id"].(float64))
 	u, err := user.GetOne(env.DB, userID)
 	if err != nil {
 		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
