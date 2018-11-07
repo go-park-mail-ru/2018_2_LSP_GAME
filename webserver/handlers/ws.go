@@ -31,7 +31,7 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 	rooms[roomHash].Join(u)
 	defer rooms[roomHash].Leave(u)
 
-	c.WriteJSON(map[string]string{"type": "room", "hash": roomHash})
+	c.WriteJSON(map[string]string{"Type": "room", "Hash": roomHash})
 
 	newCommands := make(chan Command)
 	go func() {
@@ -110,6 +110,10 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	return StatusData{http.StatusOK, map[string]string{"error": "err"}}
 }
 
+func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
+	return nil
+}
+
 func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	roomHashURL, ok := r.URL.Query()["room"]
 
@@ -131,6 +135,10 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	if userAlreadyInGame(u) {
 		return StatusData{http.StatusConflict, map[string]string{"error": "User is alredy in game"}}
+	}
+
+	if len(rooms[roomHash].users) == 4 {
+		return StatusData{http.StatusUnprocessableEntity, map[string]string{"error": "Too many users in game"}}
 	}
 
 	c, err := upgrader.Upgrade(w, r, nil)

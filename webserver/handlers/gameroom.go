@@ -13,14 +13,10 @@ type Command struct {
 }
 
 type GameRoom struct {
-	// Send a channel here to get room events back.  It will send the entire
-	// archive initially, and then new messages as they come in.
-	subscribe chan (chan<- Subscription)
-	// Send a channel here to unsubscribe.
+	subscribe   chan (chan<- Subscription)
 	unsubscribe chan (<-chan Event)
-	// Send events here to publish them.
-	publish chan Event
-	users   []user.User
+	publish     chan Event
+	users       []user.User
 }
 
 func NewGameRoom() *GameRoom {
@@ -40,15 +36,15 @@ func MakeGameRoom() GameRoom {
 }
 
 type Event struct {
-	Type      string // "join", "leave", or "message"
+	Type      string
 	User      string
-	Timestamp int    // Unix timestamp (secs)
-	Text      string // What the user said (if Type == "message")
+	Timestamp int
+	Text      string
 }
 
 type Subscription struct {
-	Archive []Event      // All the events from the archive.
-	New     <-chan Event // New events coming in.
+	Archive []Event
+	New     <-chan Event
 }
 
 func (game *GameRoom) Unsubscribe(s Subscription) {
@@ -97,7 +93,6 @@ func (game *GameRoom) Leave(u user.User) {
 
 const archiveSize = 10
 
-// This function loops forever, handling the game room pubsub
 func (game *GameRoom) Run() {
 	archive := list.New()
 	subscribers := list.New()
@@ -133,13 +128,6 @@ func (game *GameRoom) Run() {
 	}
 }
 
-// func init() {
-// 	go Gameroom()
-// }
-
-// Helpers
-
-// Drains a given channel of any messages.
 func drain(ch <-chan Event) {
 	for {
 		select {

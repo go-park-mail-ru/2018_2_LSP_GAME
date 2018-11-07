@@ -12,6 +12,9 @@ func Get() handlers.HandlersMap {
 	handlersMap["/game"] = makeRequest(handlers.HandlersMap{
 		"get": middlewares.Cors(middlewares.Auth(handlers.ConnectToGameRoom)),
 	})
+	handlersMap["/games"] = makeRequest(handlers.HandlersMap{
+		"get": middlewares.Cors(middlewares.Auth(handlers.GetAllGames)),
+	})
 	handlersMap["/gamecreate"] = makeRequest(handlers.HandlersMap{
 		"get": middlewares.Cors(middlewares.Auth(handlers.CreateGameRoom)),
 	})
