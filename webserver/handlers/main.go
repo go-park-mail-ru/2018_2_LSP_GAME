@@ -11,7 +11,7 @@ var roomHashSize = 15
 var roomLimit = 4
 var gameCount = prometheus.NewGauge(
 	prometheus.GaugeOpts{
-		Name: "http_requests_total",
+		Name: "games_total",
 		Help: "How many Games are processed.",
 	},
 )

@@ -8,7 +8,9 @@ after_success:
 - sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST rm -r ~/server/game/*
 - sshpass -p $SSH_PASS scp -rp -o stricthostkeychecking=no * $SSH_USER@$SSH_HOST:~/server/game
 - sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST docker
-  build -t game-server ~/server/game ; docker stop game ; docker run -e "DB_HOST=postgres"
+  build -t game-server ~/server/game 
+- sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST docker stop game 
+- sshpass -p $SSH_PASS ssh -o StrictHostKeyChecking=no $SSH_USER@$SSH_HOST docker run -e "DB_HOST=postgres"
   -e "DB_USER=$DB_USER" -e "DB_PASS=$DB_PASS" -e "DB_DB=$DB_DB" -d --link postgres:postgres
   --publish 4040:8080 --name game --rm --link auth-grpc:auth-grpc --link user-grpc:user-grpc
   game-server
