@@ -1,56 +1,94 @@
 package handlers
 
 import (
-	"io/ioutil"
-	"mime/multipart"
-	"os"
-	"strconv"
+	"math/rand"
+	"net/http"
 
 	"github.com/go-park-mail-ru/2018_2_LSP_GAME/user"
+	"github.com/go-park-mail-ru/2018_2_LSP_USER_GRPC/user_proto"
 )
 
-func contains(s []string, e string) bool {
-	for _, a := range s {
-		if a == e {
-			return true
-		}
+func convertGRPCUserToInternal(u *user_proto.User) user.User {
+	converted := user.User{
+		ID:        int(u.ID),
+		Email:     u.Email,
+		Username:  u.Username,
+		FirstName: u.FirstName,
+		LastName:  u.LastName,
+		Avatar:    u.Avatar,
 	}
-	return false
+	return converted
 }
 
-func extractFields(u user.User, fieldsToReturn []string) map[string]interface{} {
-	answer := map[string]interface{}{}
-	for _, f := range fieldsToReturn {
-		switch f {
-		case "id":
-			answer["id"] = u.ID
-		case "firstname":
-			answer["firstname"] = u.FirstName
-		case "lastname":
-			answer["lastname"] = u.LastName
-		case "email":
-			answer["email"] = u.Email
-		case "username":
-			answer["username"] = u.Username
-		case "rating":
-			answer["rating"] = u.Rating
-		case "avatar":
-			answer["avatar"] = u.Avatar
-		}
+func randStringRunes(n int) string {
+	var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
+	b := make([]rune, n)
+	for i := range b {
+		b[i] = letterRunes[rand.Intn(len(letterRunes))]
 	}
-	return answer
+	return string(b)
 }
 
-func saveFile(file multipart.File, handle *multipart.FileHeader, id int) error {
-	data, err := ioutil.ReadAll(file)
-	if err != nil {
-		return err
+func generateRoomHash() string {
+	roomHash := randStringRunes(roomHashSize)
+	_, ok := rooms[roomHash]
+	for ok {
+		roomHash = randStringRunes(roomHashSize)
+		_, ok = rooms[roomHash]
 	}
+	return roomHash
+}
 
-	err = ioutil.WriteFile(os.Getenv("AVATARS_PATH")+strconv.Itoa(id)+"_"+handle.Filename, data, 0666)
-	if err != nil {
-		return err
+func checkRoomLimit(room *GameRoom) error {
+	if len(room.users) == roomLimit {
+		return StatusData{
+			Code: http.StatusUnprocessableEntity,
+			Data: map[string]string{
+				"error": "Too many users in game",
+			},
+		}
 	}
-
 	return nil
+}
+
+func checkUserAlreadyInGame(u user.User) error {
+	for i := range rooms {
+		if rooms[i].UserIn(u) {
+			return StatusData{
+				Code: http.StatusConflict,
+				Data: map[string]string{
+					"error": "User is alredy in game",
+				},
+			}
+		}
+	}
+	return nil
+}
+
+func parseRoomHashFromURL(r *http.Request) (string, error) {
+	roomHashURL, ok := r.URL.Query()["room"]
+	if !ok || len(roomHashURL[0]) < 1 {
+		return "", StatusData{
+			Code: http.StatusBadRequest,
+			Data: map[string]string{
+				"error": "You must specify room ID",
+			},
+		}
+	}
+	return roomHashURL[0], nil
+}
+
+func deleteGameIfnecessary(roomHash string) {
+	if len(rooms[roomHash].users) == 0 {
+		gameCount.Dec()
+		delete(rooms, roomHash)
+	}
+}
+
+func convertGameRoomToResponse(gr *GameRoom) responseGameRoom {
+	res := responseGameRoom{
+		Hash:    gr.Hash,
+		Players: len(gr.users),
+	}
+	return res
 }

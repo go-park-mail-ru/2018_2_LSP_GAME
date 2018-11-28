@@ -1,36 +1,24 @@
 package handlers
 
 import (
-	"math/rand"
+	json "encoding/json"
+	"fmt"
 	"net/http"
 
-	jwt "github.com/dgrijalva/jwt-go"
+	cnt "context"
+
 	"github.com/go-park-mail-ru/2018_2_LSP_GAME/user"
+	"github.com/go-park-mail-ru/2018_2_LSP_USER_GRPC/user_proto"
 	"github.com/gorilla/context"
 	"github.com/gorilla/websocket"
 )
 
-type WSMessage struct {
-	command string
-	data    string
-}
+func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error {
+	subscription := room.Subscribe()
+	defer room.Unsubscribe(subscription)
 
-var rooms = make(map[string]*GameRoom)
-
-var upgrader = websocket.Upgrader{
-	CheckOrigin: func(r *http.Request) bool {
-		return true
-	},
-}
-
-func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) error {
-	subscription := rooms[roomHash].Subscribe()
-	defer rooms[roomHash].Unsubscribe(subscription)
-
-	rooms[roomHash].Join(u)
-	defer rooms[roomHash].Leave(u)
-
-	c.WriteJSON(map[string]string{"Type": "room", "Hash": roomHash})
+	room.Join(u)
+	defer room.Leave(u)
 
 	newCommands := make(chan Command)
 	go func() {
@@ -41,6 +29,7 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 				close(newCommands)
 				return
 			}
+			fmt.Println(cmd)
 			newCommands <- cmd
 		}
 	}()
@@ -56,30 +45,30 @@ func handleGameRoomConnect(c *websocket.Conn, roomHash string, u user.User) erro
 				return nil
 			}
 
-			rooms[roomHash].Execute(u, cmd)
+			room.Execute(u, cmd)
 		}
 	}
 }
 
-func userAlreadyInGame(u user.User) bool {
-	for i := range rooms {
-		if rooms[i].UserIn(u) {
-			return true
-		}
-	}
-	return false
-}
-
+// CreateGameRoom create new game room
 func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
-	claims := context.Get(r, "claims").(jwt.MapClaims)
-	userID := int(claims["id"].(float64))
-	u, err := user.GetOne(env.DB, userID)
-	if err != nil {
-		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
+	claims := context.Get(r, "claims").(map[string]interface{})
+	userID := int(claims["id"].(int))
+
+	ctx := cnt.Background()
+	userManager := user_proto.NewUserCheckerClient(env.GRCPUser)
+	userGRPC, err := userManager.GetOne(ctx,
+		&user_proto.UserID{
+			ID: int64(userID),
+		})
+	if err := handleGetOneUserGrpcError(env, err); err != nil {
+		return err
 	}
 
-	if userAlreadyInGame(u) {
-		return StatusData{http.StatusConflict, map[string]string{"error": "User is alredy in game"}}
+	u := convertGRPCUserToInternal(userGRPC)
+
+	if err := checkUserAlreadyInGame(u); err != nil {
+		return err
 	}
 
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -88,53 +77,73 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer c.Close()
 
-	roomHash := RandStringRunes(15)
-	_, ok := rooms[roomHash]
-	for ok {
-		roomHash = RandStringRunes(15)
-		_, ok = rooms[roomHash]
-	}
+	roomHash := generateRoomHash()
+	room := NewGameRoom(roomHash)
+	rooms[roomHash] = room
 
-	rooms[roomHash] = NewGameRoom()
-	go rooms[roomHash].Run()
+	c.WriteJSON(makeEventCustom("room", u, map[string]interface{}{"hash": roomHash}))
 
-	handleGameRoomConnect(c, roomHash, u)
-	if len(rooms[roomHash].users) == 0 {
-		delete(rooms, roomHash)
-	}
+	gameCount.Inc()
 
-	return StatusData{http.StatusOK, map[string]string{"error": "err"}}
-}
+	handleGameRoomConnect(c, room, u)
+	deleteGameIfnecessary(roomHash)
 
-func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 	return nil
 }
 
-func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
-	roomHashURL, ok := r.URL.Query()["room"]
-
-	if !ok || len(roomHashURL[0]) < 1 {
-		return StatusData{http.StatusBadRequest, map[string]string{"error": "You must specify room ID"}}
+// GetAllGames returns all available games
+func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
+	allgames := make([]responseGameRoom, 0)
+	for gr := range rooms {
+		allgames = append(allgames, convertGameRoomToResponse(rooms[gr]))
 	}
-	roomHash := roomHashURL[0]
+	allgamesJSON, err := json.Marshal(allgames)
+	if err != nil {
+		return StatusData{
+			Code: http.StatusInternalServerError,
+			Data: map[string]interface{}{
+				"error": err,
+			},
+		}
+	}
+	return StatusData{
+		Code: http.StatusOK,
+		Data: map[string]interface{}{
+			"gamerooms": allgamesJSON,
+		},
+	}
+}
 
+// ConnectToGameRoom connects to game room
+func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
+	roomHash, err := parseRoomHashFromURL(r)
+	if err != nil {
+		return err
+	}
 	if _, ok := rooms[roomHash]; !ok {
 		return StatusData{http.StatusNotFound, map[string]string{"error": "Game not found"}}
 	}
 
-	claims := context.Get(r, "claims").(jwt.MapClaims)
-	userID := int(claims["id"].(float64))
-	u, err := user.GetOne(env.DB, userID)
-	if err != nil {
-		return StatusData{http.StatusInternalServerError, map[string]string{"error": err.Error()}}
+	claims := context.Get(r, "claims").(map[string]interface{})
+	userID := claims["id"].(int)
+
+	ctx := cnt.Background()
+	userManager := user_proto.NewUserCheckerClient(env.GRCPUser)
+	userGRPC, err := userManager.GetOne(ctx,
+		&user_proto.UserID{
+			ID: int64(userID),
+		})
+	if err := handleGetOneUserGrpcError(env, err); err != nil {
+		return err
 	}
 
-	if userAlreadyInGame(u) {
-		return StatusData{http.StatusConflict, map[string]string{"error": "User is alredy in game"}}
-	}
+	u := convertGRPCUserToInternal(userGRPC)
 
-	if len(rooms[roomHash].users) == 4 {
-		return StatusData{http.StatusUnprocessableEntity, map[string]string{"error": "Too many users in game"}}
+	if err := checkUserAlreadyInGame(u); err != nil {
+		return err
+	}
+	if err := checkRoomLimit(rooms[roomHash]); err != nil {
+		return err
 	}
 
 	c, err := upgrader.Upgrade(w, r, nil)
@@ -143,20 +152,8 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 	defer c.Close()
 
-	handleGameRoomConnect(c, roomHash, u)
-	if len(rooms[roomHash].users) == 0 {
-		delete(rooms, roomHash)
-	}
+	handleGameRoomConnect(c, rooms[roomHash], u)
+	deleteGameIfnecessary(roomHash)
 
-	return StatusData{http.StatusOK, map[string]string{"error": "err"}}
-}
-
-var letterRunes = []rune("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ")
-
-func RandStringRunes(n int) string {
-	b := make([]rune, n)
-	for i := range b {
-		b[i] = letterRunes[rand.Intn(len(letterRunes))]
-	}
-	return string(b)
+	return nil
 }

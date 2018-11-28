@@ -26,33 +26,41 @@
 
 
 [[constraint]]
-  name = "github.com/dgrijalva/jwt-go"
-  version = "3.2.0"
+  branch = "master"
+  name = "github.com/go-park-mail-ru/2018_2_LSP_AUTH_GRPC"
+
+[[constraint]]
+  branch = "master"
+  name = "github.com/go-park-mail-ru/2018_2_LSP_USER_GRPC"
 
 [[constraint]]
   name = "github.com/gorilla/context"
   version = "1.1.1"
 
 [[constraint]]
+  name = "github.com/gorilla/websocket"
+  version = "1.4.0"
+
+[[constraint]]
   name = "github.com/lib/pq"
   version = "1.0.0"
 
 [[constraint]]
-  name = "github.com/thedevsaddam/govalidator"
-  version = "1.9.2"
+  branch = "master"
+  name = "github.com/mailru/easyjson"
 
 [[constraint]]
-  branch = "master"
-  name = "golang.org/x/crypto"
-
-[prune]
-  go-tests = true
-  unused-packages = true
+  name = "github.com/prometheus/client_golang"
+  version = "0.9.1"
 
 [[constraint]]
   name = "go.uber.org/zap"
   version = "1.9.1"
 
 [[constraint]]
-  name = "github.com/gorilla/websocket"
-  version = "1.4.0"
+  name = "google.golang.org/grpc"
+  version = "1.16.0"
+
+[prune]
+  go-tests = true
+  unused-packages = true
