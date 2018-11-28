@@ -53,7 +53,7 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 // CreateGameRoom create new game room
 func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	claims := context.Get(r, "claims").(map[string]interface{})
-	userID := int(claims["id"].(int))
+	userID := int(claims["id"].(float64))
 
 	ctx := cnt.Background()
 	userManager := user_proto.NewUserCheckerClient(env.GRCPUser)
@@ -125,7 +125,7 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	}
 
 	claims := context.Get(r, "claims").(map[string]interface{})
-	userID := claims["id"].(int)
+	userID := int(claims["id"].(float64))
 
 	ctx := cnt.Background()
 	userManager := user_proto.NewUserCheckerClient(env.GRCPUser)

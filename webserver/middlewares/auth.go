@@ -2,10 +2,8 @@ package middlewares
 
 import (
 	cnt "context"
-	"encoding/base64"
 	"encoding/json"
 	"net/http"
-	"strings"
 
 	"github.com/go-park-mail-ru/2018_2_LSP_AUTH_GRPC/auth_proto"
 	"github.com/go-park-mail-ru/2018_2_LSP_GAME/webserver/handlers"
@@ -45,7 +43,7 @@ func Auth(next handlers.HandlerFunc) handlers.HandlerFunc {
 			})
 
 		if err != nil {
-			env.Logger.Fatalw("Error during grpc request",
+			env.Logger.Errorw("Error during grpc request",
 				"err", err.Error(),
 				"grpc", "user",
 			)
@@ -66,30 +64,13 @@ func Auth(next handlers.HandlerFunc) handlers.HandlerFunc {
 			}
 		}
 
-		firstDot := strings.Index(tokenString, ".") + 1
-		secondDot := strings.Index(tokenString[firstDot:], ".") + firstDot
-		claimsJSON, err := base64.StdEncoding.DecodeString(tokenString[firstDot:secondDot])
-
-		if err != nil {
-			env.Logger.Fatalw("Error during base64 string decoding",
-				"err", err.Error(),
-				"base64encoded", tokenString[firstDot:secondDot],
-			)
-			return handlers.StatusData{
-				Code: http.StatusUnauthorized,
-				Data: map[string]string{
-					"error": "Internal server error",
-				},
-			}
-		}
-
 		claims := make(map[string]interface{})
-		err = json.Unmarshal(claimsJSON, &claims)
+		err = json.Unmarshal(token.Claims, &claims)
 		if err != nil {
 			env.Logger.Warnw("Can't unmarshall data",
 				"err", err.Error(),
 				"data", claims,
-				"json", claimsJSON,
+				"json", string(token.Claims),
 			)
 			return handlers.StatusData{
 				Code: http.StatusUnauthorized,
