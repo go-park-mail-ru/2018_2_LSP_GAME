@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	json "encoding/json"
 	"fmt"
 	"net/http"
 
@@ -97,19 +96,19 @@ func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 	for gr := range rooms {
 		allgames = append(allgames, convertGameRoomToResponse(rooms[gr]))
 	}
-	allgamesJSON, err := json.Marshal(allgames)
-	if err != nil {
-		return StatusData{
-			Code: http.StatusInternalServerError,
-			Data: map[string]interface{}{
-				"error": err,
-			},
-		}
-	}
+	// allgamesJSON, err := json.Marshal(allgames)
+	// if err != nil {
+	// 	return StatusData{
+	// 		Code: http.StatusInternalServerError,
+	// 		Data: map[string]interface{}{
+	// 			"error": err,
+	// 		},
+	// 	}
+	// }
 	return StatusData{
 		Code: http.StatusOK,
 		Data: map[string]interface{}{
-			"gamerooms": allgamesJSON,
+			"gamerooms": allgames,
 		},
 	}
 }

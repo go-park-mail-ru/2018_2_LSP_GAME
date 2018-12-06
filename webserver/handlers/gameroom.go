@@ -21,6 +21,8 @@ type GameRoom struct {
 	users       []user.User
 	game        game.Game
 	Hash        string
+	TotalReady  int
+	Started     bool
 }
 
 // NewGameRoom creates new game room
@@ -37,6 +39,8 @@ func MakeGameRoom(hash string) GameRoom {
 		unsubscribe: make(chan (<-chan Event), 10),
 		publish:     make(chan Event, 10),
 		Hash:        hash,
+		Started:     false,
+		TotalReady:  0,
 	}
 
 	distribution := []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
@@ -125,6 +129,9 @@ func (gr *GameRoom) Join(u user.User) {
 func (gr *GameRoom) Execute(u user.User, cmd Command) {
 	switch cmd.Action {
 	case "move":
+		if !gr.Started {
+			return
+		}
 		id := -1
 		for i := range gr.users {
 			if gr.users[i].ID == u.ID {
@@ -147,6 +154,22 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 		if err != nil {
 			return
 		}
+	case "ready":
+		id := -1
+		for i := range gr.users {
+			if gr.users[i].ID == u.ID {
+				id = i
+				break
+			}
+		}
+		if !gr.users[id].Ready {
+			gr.users[id].Ready = true
+			gr.TotalReady++
+			if gr.TotalReady == len(gr.users) {
+				gr.Started = true
+				gr.publish <- makeEventCustom("start", gr.users[0], map[string]interface{}{})
+			}
+		}
 	default:
 		return
 	}
@@ -157,6 +180,9 @@ func (gr *GameRoom) Leave(u user.User) {
 	id := -1
 	for i := 0; i < len(gr.users); i++ {
 		if gr.users[i].ID == u.ID {
+			if !gr.Started && gr.users[i].Ready {
+				gr.TotalReady--
+			}
 			gr.users = append(gr.users[:i], gr.users[i+1:]...)
 			id = i
 			break

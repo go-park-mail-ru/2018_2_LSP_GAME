@@ -9,4 +9,5 @@ type User struct {
 	FirstName string `json:"firstname"`
 	LastName  string `json:"lastname"`
 	Avatar    string `json:"avatar"`
+	Ready     bool
 }
