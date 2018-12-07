@@ -78,7 +78,9 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	roomHash := generateRoomHash()
 	room := NewGameRoom(roomHash)
+	fmt.Println("BEFORE ", rooms)
 	rooms[roomHash] = room
+	fmt.Println("AFTER ", rooms)
 
 	c.WriteJSON(makeEventCustom("room", u, map[string]interface{}{"hash": roomHash}))
 
