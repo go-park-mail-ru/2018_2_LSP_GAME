@@ -88,6 +88,7 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	handleGameRoomConnect(c, room, u)
 	deleteGameIfnecessary(roomHash)
+	fmt.Println("DELETED ", rooms)
 
 	return nil
 }
