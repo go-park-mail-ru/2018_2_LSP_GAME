@@ -94,6 +94,8 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 	allgames := make([]responseGameRoom, 0)
 	for gr := range rooms {
+		fmt.Println(gr)
+		fmt.Println(convertGameRoomToResponse(rooms[gr]))
 		allgames = append(allgames, convertGameRoomToResponse(rooms[gr]))
 	}
 	// allgamesJSON, err := json.Marshal(allgames)
