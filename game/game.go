@@ -131,6 +131,11 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 
 	// Применяем карточку
 	cardType := g.gamemap.getCardType(cardID)
+
+	g.Events <- makeEvent("card", map[string]interface{}{
+		"type": cardType,
+	})
+
 	cardObject := makeCard(cardType, pirateID)
 	cardObject.apply(g)
 

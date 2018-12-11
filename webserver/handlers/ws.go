@@ -51,6 +51,8 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 
 // CreateGameRoom create new game room
 func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
+	title, err := parseRoomTitleFromURL(r)
+	players := parsePlayersCountFromURL(r)
 	claims := context.Get(r, "claims").(map[string]interface{})
 	userID := int(claims["id"].(float64))
 
@@ -77,7 +79,7 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	defer c.Close()
 
 	roomHash := generateRoomHash()
-	room := NewGameRoom(roomHash)
+	room := NewGameRoom(roomHash, title, players)
 	fmt.Println("BEFORE ", rooms)
 	rooms[roomHash] = room
 	fmt.Println("AFTER ", rooms)

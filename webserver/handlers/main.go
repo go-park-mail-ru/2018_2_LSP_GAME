@@ -8,7 +8,7 @@ import (
 )
 
 var roomHashSize = 15
-var roomLimit = 4
+
 var gameCount = prometheus.NewGauge(
 	prometheus.GaugeOpts{
 		Name: "games_total",

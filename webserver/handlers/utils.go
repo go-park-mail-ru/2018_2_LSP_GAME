@@ -3,6 +3,7 @@ package handlers
 import (
 	"math/rand"
 	"net/http"
+	"strconv"
 
 	"github.com/go-park-mail-ru/2018_2_LSP_GAME/user"
 	"github.com/go-park-mail-ru/2018_2_LSP_USER_GRPC/user_proto"
@@ -40,7 +41,7 @@ func generateRoomHash() string {
 }
 
 func checkRoomLimit(room *GameRoom) error {
-	if len(room.users) == roomLimit {
+	if len(room.users) == room.MaxUsers {
 		return StatusData{
 			Code: http.StatusUnprocessableEntity,
 			Data: map[string]string{
@@ -78,6 +79,31 @@ func parseRoomHashFromURL(r *http.Request) (string, error) {
 	return roomHashURL[0], nil
 }
 
+func parseRoomTitleFromURL(r *http.Request) (string, error) {
+	roomTitleURL, ok := r.URL.Query()["title"]
+	if !ok || len(roomTitleURL[0]) < 1 {
+		return "", StatusData{
+			Code: http.StatusBadRequest,
+			Data: map[string]string{
+				"error": "No title was specified",
+			},
+		}
+	}
+	return roomTitleURL[0], nil
+}
+
+func parsePlayersCountFromURL(r *http.Request) int {
+	parsedURL, ok := r.URL.Query()["players"]
+	if !ok {
+		return 4
+	}
+	cnt, err := strconv.Atoi(parsedURL[0])
+	if err == nil && cnt == 2 {
+		return 2
+	}
+	return 4
+}
+
 func deleteGameIfnecessary(roomHash string) {
 	if len(rooms[roomHash].users) == 0 {
 		gameCount.Dec()
@@ -87,8 +113,10 @@ func deleteGameIfnecessary(roomHash string) {
 
 func convertGameRoomToResponse(gr *GameRoom) responseGameRoom {
 	res := responseGameRoom{
-		Hash:    gr.Hash,
-		Players: len(gr.users),
+		Hash:       gr.Hash,
+		Players:    len(gr.users),
+		Title:      gr.Title,
+		MaxPlayers: gr.MaxUsers,
 	}
 	return res
 }

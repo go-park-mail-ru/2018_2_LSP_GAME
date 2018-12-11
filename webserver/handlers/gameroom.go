@@ -20,20 +20,22 @@ type GameRoom struct {
 	publish     chan Event
 	users       []user.User
 	game        game.Game
+	MaxUsers    int
 	Hash        string
 	TotalReady  int
 	Started     bool
+	Title       string
 }
 
 // NewGameRoom creates new game room
-func NewGameRoom(hash string) *GameRoom {
-	g := MakeGameRoom(hash)
+func NewGameRoom(hash string, title string, users int) *GameRoom {
+	g := MakeGameRoom(hash, title, users)
 	go g.Run()
 	return &g
 }
 
 // MakeGameRoom makes new game room
-func MakeGameRoom(hash string) GameRoom {
+func MakeGameRoom(hash string, title string, users int) GameRoom {
 	c := GameRoom{
 		subscribe:   make(chan (chan<- Subscription), 10),
 		unsubscribe: make(chan (<-chan Event), 10),
@@ -41,6 +43,8 @@ func MakeGameRoom(hash string) GameRoom {
 		Hash:        hash,
 		Started:     false,
 		TotalReady:  0,
+		Title:       title,
+		MaxUsers:    users,
 	}
 
 	distribution := []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
@@ -123,6 +127,9 @@ func (gr *GameRoom) UserIn(u user.User) bool {
 func (gr *GameRoom) Join(u user.User) {
 	gr.users = append(gr.users, u)
 	gr.publish <- makeEventCustom("join", u, map[string]interface{}{})
+	for _, p := range gr.users {
+		gr.publish <- makeEventCustom("players", p, map[string]interface{}{})
+	}
 }
 
 // Execute user command
