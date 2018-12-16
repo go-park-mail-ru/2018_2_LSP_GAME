@@ -51,6 +51,7 @@ func MakeGame(distribution []Distribution, playersCount int, pirateCount int, ti
 func (g *Game) StartTimer() {
 	g.Timer = time.NewTimer(time.Duration(g.TimeLimit) * time.Second)
 	go func() {
+		<-g.Timer.C
 		g.Events <- makeEvent("expired", map[string]interface{}{
 			"playerID": g.currentPlayer,
 		})
@@ -92,6 +93,7 @@ func (g *Game) nextPlayer() {
 	g.Events <- makeEvent("nextplayer", map[string]interface{}{
 		"playerID": g.currentPlayer,
 	})
+	g.StartTimer()
 }
 
 // MovePirate moves pirate to cardID (if it is possible)
@@ -115,7 +117,6 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 	// }
 
 	g.stopTimer()
-	defer g.StartTimer()
 
 	g.moveMutex.Lock()
 	defer g.moveMutex.Unlock()
