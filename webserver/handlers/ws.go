@@ -13,12 +13,12 @@ import (
 )
 
 func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error {
+	defer deleteGameIfnecessary(room)
 	subscription := room.Subscribe()
 	defer room.Unsubscribe(subscription)
 
 	room.Join(u)
 	defer room.Leave(u)
-	defer deleteGameIfnecessary(room)
 
 	newCommands := make(chan Command)
 	go func() {

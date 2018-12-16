@@ -89,7 +89,7 @@ func makeEventMessage(u user.User, msg string) Event {
 
 func makeEventFromGame(gameevent game.Event) Event {
 	event := Event{
-		Type:      "game",
+		Type:      gameevent.Event,
 		Timestamp: int(time.Now().Unix()),
 		Data:      gameevent.Data,
 	}
