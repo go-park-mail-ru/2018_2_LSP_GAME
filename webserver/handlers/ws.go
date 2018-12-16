@@ -108,6 +108,7 @@ func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 		fmt.Println(convertGameRoomToResponse(rooms[gr]))
 		allgames = append(allgames, convertGameRoomToResponse(rooms[gr]))
 	}
+	fmt.Println(allgames)
 	// allgamesJSON, err := json.Marshal(allgames)
 	// if err != nil {
 	// 	return StatusData{
@@ -119,7 +120,7 @@ func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 	// }
 	return StatusData{
 		Code: http.StatusOK,
-		Data: map[string]interface{}{
+		Data: map[string][]responseGameRoom{
 			"gamerooms": allgames,
 		},
 	}
