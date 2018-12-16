@@ -18,6 +18,7 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 
 	room.Join(u)
 	defer room.Leave(u)
+	defer deleteGameIfnecessary(room)
 
 	newCommands := make(chan Command)
 	go func() {
@@ -40,7 +41,9 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 				return nil
 			}
 		case cmd, ok := <-newCommands:
+			fmt.Println("Decoding command", cmd, ok)
 			if !ok {
+				fmt.Println("Bad command")
 				return nil
 			}
 
@@ -53,6 +56,9 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	title, err := parseRoomTitleFromURL(r)
 	players := parsePlayersCountFromURL(r)
+	mapSize := parseMapSizeFromURL(r)
+	timeLimit := parseTimeLimitFromURL(r)
+
 	claims := context.Get(r, "claims").(map[string]interface{})
 	userID := int(claims["id"].(float64))
 
@@ -79,7 +85,7 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	defer c.Close()
 
 	roomHash := generateRoomHash()
-	room := NewGameRoom(roomHash, title, players)
+	room := NewGameRoom(roomHash, title, players, mapSize, timeLimit)
 	fmt.Println("BEFORE ", rooms)
 	rooms[roomHash] = room
 	fmt.Println("AFTER ", rooms)
@@ -89,8 +95,6 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	gameCount.Inc()
 
 	handleGameRoomConnect(c, room, u)
-	deleteGameIfnecessary(roomHash)
-	fmt.Println("DELETED ", rooms)
 
 	return nil
 }
@@ -160,7 +164,6 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	defer c.Close()
 
 	handleGameRoomConnect(c, rooms[roomHash], u)
-	deleteGameIfnecessary(roomHash)
 
 	return nil
 }

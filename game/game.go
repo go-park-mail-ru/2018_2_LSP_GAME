@@ -3,6 +3,7 @@ package game
 import (
 	"fmt"
 	"sync"
+	"time"
 )
 
 // Event implements game event
@@ -23,10 +24,12 @@ type Game struct {
 	players        []player
 	Events         chan Event
 	moveMutex      *sync.Mutex
+	TimeLimit      int
+	Timer          *time.Timer
 }
 
 // MakeGame is constructor for Game struct
-func MakeGame(distribution []Distribution, playersCount int, pirateCount int) Game {
+func MakeGame(distribution []Distribution, playersCount int, pirateCount int, timeLimit int) Game {
 	game := Game{}
 	game.Events = make(chan Event, 10)
 	builder := makeMapBuilder(distribution)
@@ -38,9 +41,29 @@ func MakeGame(distribution []Distribution, playersCount int, pirateCount int) Ga
 		game.players[i].addPirates(pirateCount, position{true, 0})
 	}
 
+	game.TimeLimit = timeLimit
+
 	game.moveMutex = &sync.Mutex{}
 
 	return game
+}
+
+func (g *Game) StartTimer() {
+	g.Timer = time.NewTimer(time.Duration(g.TimeLimit) * time.Second)
+	go func() {
+		g.Events <- makeEvent("expired", map[string]interface{}{
+			"playerID": g.currentPlayer,
+		})
+		g.nextPlayer()
+	}()
+}
+
+func (g *Game) stopTimer() {
+	g.Timer.Stop()
+}
+
+func (g *Game) restartTimer() {
+	g.Timer.Stop()
 }
 
 // RemovePlayer removes player from game on disconnect
@@ -63,25 +86,36 @@ func (g *Game) getCurrentPlayer() player {
 	return g.players[g.currentPlayer]
 }
 
+func (g *Game) nextPlayer() {
+	// Меняем ход игрока
+	g.currentPlayer = (g.currentPlayer + 1) % len(g.players)
+	g.Events <- makeEvent("nextplayer", map[string]interface{}{
+		"playerID": g.currentPlayer,
+	})
+}
+
 // MovePirate moves pirate to cardID (if it is possible)
 func (g *Game) MovePirate(pirateID int, cardID int) error {
-	fmt.Println("Current player", g.currentPlayer)
-	fmt.Println("Players:")
-	for i := 0; i < len(g.players); i++ {
-		fmt.Println("Player", i)
-		fmt.Println("Score:", g.players[i].score)
-		for j := 0; j < len(g.players[i].pirates); j++ {
-			fmt.Println("Pirate:", j, g.players[i].pirates[j])
-		}
-		fmt.Println()
-	}
-	fmt.Println("Map:")
-	for i := 0; i < g.gamemap.size*g.gamemap.size; i++ {
-		fmt.Print(g.gamemap.mapData[i], "\t")
-		if i%g.gamemap.size == g.gamemap.size-1 {
-			fmt.Println()
-		}
-	}
+	// fmt.Println("Current player", g.currentPlayer)
+	// fmt.Println("Players:")
+	// for i := 0; i < len(g.players); i++ {
+	// 	fmt.Println("Player", i)
+	// 	fmt.Println("Score:", g.players[i].score)
+	// 	for j := 0; j < len(g.players[i].pirates); j++ {
+	// 		fmt.Println("Pirate:", j, g.players[i].pirates[j])
+	// 	}
+	// 	fmt.Println()
+	// }
+	// fmt.Println("Map:")
+	// for i := 0; i < g.gamemap.size*g.gamemap.size; i++ {
+	// 	fmt.Print(g.gamemap.mapData[i], "\t")
+	// 	if i%g.gamemap.size == g.gamemap.size-1 {
+	// 		fmt.Println()
+	// 	}
+	// }
+
+	g.stopTimer()
+	defer g.StartTimer()
 
 	g.moveMutex.Lock()
 	defer g.moveMutex.Unlock()
@@ -146,11 +180,7 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 		})
 	}
 
-	// Меняем ход игрока
-	g.currentPlayer = (g.currentPlayer + 1) % len(g.players)
-	g.Events <- makeEvent("nextplayer", map[string]interface{}{
-		"playerID": g.currentPlayer,
-	})
+	g.nextPlayer()
 
 	return nil
 

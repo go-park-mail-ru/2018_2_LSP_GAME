@@ -104,10 +104,34 @@ func parsePlayersCountFromURL(r *http.Request) int {
 	return 4
 }
 
-func deleteGameIfnecessary(roomHash string) {
-	if len(rooms[roomHash].users) == 0 {
+func parseMapSizeFromURL(r *http.Request) int {
+	parsedURL, ok := r.URL.Query()["size"]
+	if !ok {
+		return 5
+	}
+	cnt, err := strconv.Atoi(parsedURL[0])
+	if err == nil && (cnt == 7 || cnt == 9) {
+		return cnt
+	}
+	return 5
+}
+
+func parseTimeLimitFromURL(r *http.Request) int {
+	parsedURL, ok := r.URL.Query()["timelimit"]
+	if !ok {
+		return 60
+	}
+	cnt, err := strconv.Atoi(parsedURL[0])
+	if err == nil && (cnt == 30 || cnt == 90) {
+		return cnt
+	}
+	return 60
+}
+
+func deleteGameIfnecessary(room *GameRoom) {
+	if len(room.users) == 0 {
 		gameCount.Dec()
-		delete(rooms, roomHash)
+		delete(rooms, room.Hash)
 	}
 }
 
@@ -117,6 +141,7 @@ func convertGameRoomToResponse(gr *GameRoom) responseGameRoom {
 		Players:    len(gr.users),
 		Title:      gr.Title,
 		MaxPlayers: gr.MaxUsers,
+		TimeLimit:  gr.game.TimeLimit,
 	}
 	return res
 }

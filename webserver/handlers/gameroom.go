@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"container/list"
+	"fmt"
 	"strconv"
 	"time"
 
@@ -28,14 +29,14 @@ type GameRoom struct {
 }
 
 // NewGameRoom creates new game room
-func NewGameRoom(hash string, title string, users int) *GameRoom {
-	g := MakeGameRoom(hash, title, users)
+func NewGameRoom(hash string, title string, users int, mapSize int, timeLimit int) *GameRoom {
+	g := MakeGameRoom(hash, title, users, mapSize, timeLimit)
 	go g.Run()
 	return &g
 }
 
 // MakeGameRoom makes new game room
-func MakeGameRoom(hash string, title string, users int) GameRoom {
+func MakeGameRoom(hash string, title string, users int, mapSize int, timeLimit int) GameRoom {
 	c := GameRoom{
 		subscribe:   make(chan (chan<- Subscription), 10),
 		unsubscribe: make(chan (<-chan Event), 10),
@@ -49,7 +50,7 @@ func MakeGameRoom(hash string, title string, users int) GameRoom {
 
 	distribution := []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
 
-	c.game = game.MakeGame(distribution, 2, 2)
+	c.game = game.MakeGame(distribution, users, 2, timeLimit)
 	return c
 }
 
@@ -134,6 +135,7 @@ func (gr *GameRoom) Join(u user.User) {
 
 // Execute user command
 func (gr *GameRoom) Execute(u user.User, cmd Command) {
+	fmt.Println("CMD", cmd)
 	switch cmd.Action {
 	case "move":
 		if !gr.Started {
@@ -172,9 +174,11 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 		if !gr.users[id].Ready {
 			gr.users[id].Ready = true
 			gr.TotalReady++
+			gr.publish <- makeEventCustom("ready", gr.users[id], map[string]interface{}{})
 			if gr.TotalReady == len(gr.users) {
 				gr.Started = true
 				gr.publish <- makeEventCustom("start", gr.users[0], map[string]interface{}{})
+				gr.game.StartTimer()
 			}
 		}
 	default:
