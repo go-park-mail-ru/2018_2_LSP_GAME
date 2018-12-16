@@ -58,7 +58,10 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch e := err.(type) {
 		case StatusData:
 			w.WriteHeader(e.Status())
-			jsonData, _ := e.GetJsonData()
+			fmt.Println(e.Data)
+			jsonData, err := e.GetJsonData()
+			fmt.Println(jsonData)
+			fmt.Println(err)
 			w.Write(jsonData)
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError),
