@@ -13,7 +13,7 @@ func Get() handlers.HandlersMap {
 		"get": middlewares.Auth(handlers.ConnectToGameRoom),
 	})
 	handlersMap["/games"] = makeRequest(handlers.HandlersMap{
-		"get": middlewares.Auth(handlers.GetAllGames),
+		"get": handlers.GetAllGames,
 	})
 	handlersMap["/gamecreate"] = makeRequest(handlers.HandlersMap{
 		"get": middlewares.Auth(handlers.CreateGameRoom),
