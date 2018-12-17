@@ -175,7 +175,7 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 			gr.users[id].Ready = true
 			gr.TotalReady++
 			gr.publish <- makeEventCustom("ready", gr.users[id], map[string]interface{}{})
-			if gr.TotalReady == len(gr.users) {
+			if gr.TotalReady == gr.MaxUsers {
 				gr.Started = true
 				gr.publish <- makeEventCustom("start", gr.users[0], map[string]interface{}{})
 				gr.game.StartTimer()
