@@ -90,11 +90,15 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	rooms[roomHash] = room
 	fmt.Println("AFTER ", rooms)
 
-	c.WriteJSON(makeEventCustom("room", u, map[string]interface{}{"hash": roomHash}))
+	if err = c.WriteJSON(makeEventCustom("room", u, map[string]interface{}{"hash": roomHash})); err != nil {
+		return nil
+	}
 
 	gameCount.Inc()
 
-	handleGameRoomConnect(c, room, u)
+	if err := handleGameRoomConnect(c, room, u); err != nil {
+		return err
+	}
 
 	return nil
 }
@@ -102,22 +106,9 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 // GetAllGames returns all available games
 func GetAllGames(env *Env, w http.ResponseWriter, r *http.Request) error {
 	allgames := make([]responseGameRoom, 0)
-	fmt.Println("All rooms", rooms)
 	for _, r := range rooms {
-		fmt.Println("Detailed room", r)
-		fmt.Println("Converted room", convertGameRoomToResponse(r))
 		allgames = append(allgames, convertGameRoomToResponse(r))
 	}
-	fmt.Println(allgames)
-	// allgamesJSON, err := json.Marshal(allgames)
-	// if err != nil {
-	// 	return StatusData{
-	// 		Code: http.StatusInternalServerError,
-	// 		Data: map[string]interface{}{
-	// 			"error": err,
-	// 		},
-	// 	}
-	// }
 	return StatusData{
 		Code: http.StatusOK,
 		Data: map[string][]responseGameRoom{
@@ -162,9 +153,11 @@ func ConnectToGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 	if err != nil {
 		return err
 	}
-	defer c.Close()
+	defer c.Close() // nolint: errcheck
 
-	handleGameRoomConnect(c, rooms[roomHash], u)
+	if err := handleGameRoomConnect(c, rooms[roomHash], u); err != nil {
+		return err
+	}
 
 	return nil
 }

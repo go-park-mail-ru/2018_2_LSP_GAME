@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"database/sql"
 	"encoding/json"
 	"fmt"
 	"net/http"
@@ -16,24 +15,23 @@ type StatusData struct {
 	Data interface{}
 }
 
-// Allows StatusData to satisfy the error interface.
+// Error allows StatusData to satisfy the error interface.
 func (sd StatusData) Error() string {
 	return fmt.Sprintf("%v", sd.Data)
 }
 
-// Allows StatusData to satisfy the error interface.
-func (sd StatusData) GetJsonData() ([]byte, error) {
+// GetJSONData allows StatusData to satisfy the error interface.
+func (sd StatusData) GetJSONData() ([]byte, error) {
 	return json.Marshal(sd.Data)
 }
 
-// Returns our HTTP status code.
+// Status returns our HTTP status code.
 func (se StatusData) Status() int {
 	return se.Code
 }
 
-// A (simple) example of our application-wide configuration.
+// Env hold env
 type Env struct {
-	DB       *sql.DB
 	Logger   *zap.SugaredLogger
 	GRCPUser *grpc.ClientConn
 	GRCPAuth *grpc.ClientConn
@@ -42,6 +40,7 @@ type Env struct {
 // HandlerFunc func for Handler
 type HandlerFunc func(e *Env, w http.ResponseWriter, r *http.Request) error
 
+// HandlersMap map of handlers
 type HandlersMap map[string]HandlerFunc
 
 // The Handler struct that takes a configured Env and a function matching
@@ -58,11 +57,20 @@ func (h Handler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		switch e := err.(type) {
 		case StatusData:
 			w.WriteHeader(e.Status())
-			fmt.Println(e.Data)
-			jsonData, err := e.GetJsonData()
-			fmt.Println(jsonData)
-			fmt.Println(err)
-			w.Write(jsonData)
+			jsonData, err := e.GetJSONData()
+			if err != nil {
+				h.Logger.Errorw("Can't get JSON data from StatusCode",
+					"error", e,
+				)
+				return
+			}
+			_, err = w.Write(jsonData)
+			if err != nil {
+				h.Logger.Errorw("Can't write JSON data to response body",
+					"data", jsonData,
+				)
+				return
+			}
 		default:
 			http.Error(w, http.StatusText(http.StatusInternalServerError),
 				http.StatusInternalServerError)
