@@ -2,7 +2,6 @@ package handlers
 
 import (
 	"container/list"
-	"fmt"
 	"strconv"
 	"time"
 
@@ -135,7 +134,6 @@ func (gr *GameRoom) Join(u user.User) {
 
 // Execute user command
 func (gr *GameRoom) Execute(u user.User, cmd Command) {
-	fmt.Println("CMD", cmd)
 	switch cmd.Action {
 	case "move":
 		if !gr.Started {

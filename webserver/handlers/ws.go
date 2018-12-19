@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"fmt"
 	"net/http"
 
 	cnt "context"
@@ -29,7 +28,6 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 				close(newCommands)
 				return
 			}
-			fmt.Println(cmd)
 			newCommands <- cmd
 		}
 	}()
@@ -41,9 +39,7 @@ func handleGameRoomConnect(c *websocket.Conn, room *GameRoom, u user.User) error
 				return nil
 			}
 		case cmd, ok := <-newCommands:
-			fmt.Println("Decoding command", cmd, ok)
 			if !ok {
-				fmt.Println("Bad command")
 				return nil
 			}
 
@@ -86,9 +82,7 @@ func CreateGameRoom(env *Env, w http.ResponseWriter, r *http.Request) error {
 
 	roomHash := generateRoomHash()
 	room := NewGameRoom(roomHash, title, players, mapSize, timeLimit)
-	fmt.Println("BEFORE ", rooms)
 	rooms[roomHash] = room
-	fmt.Println("AFTER ", rooms)
 
 	if err = c.WriteJSON(makeEventCustom("room", u, map[string]interface{}{"hash": roomHash})); err != nil {
 		return nil

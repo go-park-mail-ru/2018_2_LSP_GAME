@@ -1,9 +1,5 @@
 package game
 
-import (
-	"fmt"
-)
-
 const (
 	DefaultCard = iota
 	GoldCard    = iota
@@ -18,7 +14,6 @@ type emptyCard struct {
 }
 
 func (c emptyCard) apply(game *Game) {
-	fmt.Println("Пустая карточка")
 }
 
 type goldCard struct {
@@ -32,7 +27,6 @@ func (c goldCard) apply(game *Game) {
 		game.Events <- makeEvent("card_gold", map[string]interface{}{
 			"playerID": game.currentPlayer,
 		})
-		fmt.Println("Игрок получил дополнительное очко")
 	}
 }
 
@@ -46,7 +40,6 @@ func (c killCard) apply(game *Game) {
 		"playerID": game.currentPlayer,
 		"pirateID": c.pirateID},
 	)
-	fmt.Println("Фишка погибла на карточке")
 }
 
 func makeCard(id int, pirateID int) card {
