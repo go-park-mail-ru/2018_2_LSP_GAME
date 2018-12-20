@@ -47,7 +47,15 @@ func MakeGameRoom(hash string, title string, users int, mapSize int, timeLimit i
 		MaxUsers:    users,
 	}
 
-	distribution := []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
+	distribution := []game.Distribution{}
+	switch mapSize {
+	case 7:
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 27), game.MakeDistribution(game.GoldCard, 12), game.MakeDistribution(game.KillCard, 10)}
+	case 9:
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 50), game.MakeDistribution(game.GoldCard, 16), game.MakeDistribution(game.KillCard, 15)}
+	default:
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
+	}
 
 	c.game = game.MakeGame(distribution, users, 2, timeLimit)
 	return c
@@ -149,8 +157,16 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 		if id != gr.game.GetCurrentPlayerID() {
 			return
 		}
+
+		if _, ok := cmd.Params["pirate"]; !ok {
+			return
+		}
 		pirate, err := strconv.Atoi(cmd.Params["pirate"])
 		if err != nil {
+			return
+		}
+
+		if _, ok := cmd.Params["pirate"]; !ok {
 			return
 		}
 		card, err := strconv.Atoi(cmd.Params["card"])
@@ -161,6 +177,14 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 		if err != nil {
 			return
 		}
+	case "message":
+		message, ok := cmd.Params["message"]
+		if !ok {
+			return
+		}
+		gr.publish <- makeEventCustom("newmessage", u, map[string]interface{}{
+			"message": message,
+		})
 	case "ready":
 		id := -1
 		for i := range gr.users {
