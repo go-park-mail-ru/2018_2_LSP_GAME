@@ -21,9 +21,9 @@ type goldCard struct {
 }
 
 func (c goldCard) apply(game *Game) {
-	if game.gamemap.goldData[game.players[game.currentPlayer].pirates[c.pirateID].card.id] > 0 {
+	if game.Gamemap.goldData[game.players[game.currentPlayer].pirates[c.pirateID].card.id] > 0 {
 		game.players[game.currentPlayer].incScore()
-		game.gamemap.goldData[game.players[game.currentPlayer].pirates[c.pirateID].card.id]--
+		game.Gamemap.goldData[game.players[game.currentPlayer].pirates[c.pirateID].card.id]--
 		game.Events <- makeEvent("card_gold", map[string]interface{}{
 			"playerID": game.currentPlayer,
 		})

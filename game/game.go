@@ -1,7 +1,7 @@
 package game
 
 import (
-	"fmt"
+	"errors"
 	"sync"
 	"time"
 )
@@ -18,7 +18,7 @@ func makeEvent(event string, data map[string]interface{}) Event {
 
 // Game implements main game struct
 type Game struct {
-	gamemap        gameMap
+	Gamemap        gameMap
 	currentPlayer  int
 	totalGoldCount int
 	players        []player
@@ -33,7 +33,7 @@ func MakeGame(distribution []Distribution, playersCount int, pirateCount int, ti
 	game := Game{}
 	game.Events = make(chan Event, 10)
 	builder := makeMapBuilder(distribution)
-	game.gamemap = builder.generateMap()
+	game.Gamemap = builder.generateMap()
 
 	game.currentPlayer = 0
 	game.players = make([]player, playersCount)
@@ -74,8 +74,21 @@ func (g *Game) RemovePlayer(playerID int) {
 	g.moveMutex.Unlock()
 }
 
-func (g *Game) checkForWin() bool {
-	return false
+func (g *Game) checkForWin() int {
+	if g.Gamemap.getUnusedGoldCount() > 0 {
+		return -1
+	}
+
+	id := 0
+	score := g.players[0].getScore()
+	for i := range g.players {
+		if g.players[i].getScore() > score {
+			score = g.players[i].getScore()
+			id = i
+		}
+	}
+
+	return id
 }
 
 // GetCurrentPlayerID returns current player ID
@@ -107,8 +120,7 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 	pirate := player.getPirate(pirateID)
 	pirateCard := pirate.getCard()
 
-	moveableCards := g.gamemap.getMoveableCards(g.currentPlayer, pirateCard)
-	fmt.Println("Movable cards:", moveableCards)
+	moveableCards := g.Gamemap.getMoveableCards(g.currentPlayer, pirateCard)
 	movable := false
 	for i := 0; i < len(moveableCards); i++ {
 		if moveableCards[i].id == cardID {
@@ -117,18 +129,14 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 		}
 	}
 	if !movable {
-		fmt.Println("Not movable")
 		return nil
 	}
-
-	fmt.Println("Movable")
 
 	// Проверяем всех остальных пиратов. Если они стоят на этой карточке - их нужно убить
 	for i := 0; i < len(g.players); i++ {
 		pirates := g.players[i].getPirates()
 		for j := 0; j < len(pirates); j++ {
 			if pirates[j].getCard().id == cardID {
-				fmt.Println("Убита фишка ", g.players[i].pirates[j], "игрока", g.players[i])
 				g.players[i].pirates[j].kill()
 				g.Events <- makeEvent("kill", map[string]interface{}{
 					"playerID": i,
@@ -143,7 +151,7 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 	g.players[g.currentPlayer].pirates[pirateID].setCard(makePosition(false, cardID))
 
 	// Применяем карточку
-	cardType := g.gamemap.getCardType(cardID)
+	cardType := g.Gamemap.getCardType(cardID)
 
 	g.Events <- makeEvent("movement", map[string]interface{}{
 		"playerID": g.currentPlayer,
@@ -156,10 +164,11 @@ func (g *Game) MovePirate(pirateID int, cardID int) error {
 	cardObject.apply(g)
 
 	// Проверяем условие победы
-	if g.checkForWin() {
+	if id := g.checkForWin(); id != -1 {
 		g.Events <- makeEvent("win", map[string]interface{}{
-			"playerID": g.currentPlayer,
+			"playerID": id,
 		})
+		return errors.New("Game ended")
 	}
 
 	g.nextPlayer()

@@ -42,7 +42,7 @@ func (b *MapBuilder) generateMap() gameMap {
 	i := 0
 	mapData := make([]int, mapSize*mapSize)
 	for len(b.distribution) > 0 {
-		index := random(0, (len(b.distribution)-1)*1000) % 3
+		index := random(0, (len(b.distribution)-1)*1000) % (len(b.distribution) - 1)
 		cardType := b.distribution[index].cardID
 		b.distribution[index].count--
 		if b.distribution[index].count == 0 {

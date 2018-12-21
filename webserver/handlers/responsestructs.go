@@ -6,4 +6,5 @@ type responseGameRoom struct {
 	Title      string `json:"title"`
 	MaxPlayers int    `json:"maxplayers"`
 	TimeLimit  int    `json:"timelimit"`
+	MapSize    int    `json:"mapsize"`
 }

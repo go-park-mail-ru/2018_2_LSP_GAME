@@ -5,14 +5,21 @@ func makePosition(onship bool, id int) position {
 }
 
 type gameMap struct {
-	size           int
-	mapData        []int
-	totalGoldCount int
-	goldData       []int
+	size            int
+	mapData         []int
+	totalGoldCount  int
+	totalGoldUnused int
+	goldData        []int
 }
 
 func makeMap(mapData []int, size int) gameMap {
-	result := gameMap{size, mapData, 0, make([]int, size*size)}
+	result := gameMap{
+		size:            size,
+		mapData:         mapData,
+		totalGoldCount:  0,
+		totalGoldUnused: 0,
+		goldData:        make([]int, size*size),
+	}
 	result.countGoldData()
 	return result
 }
@@ -24,10 +31,18 @@ func (m *gameMap) countGoldData() {
 			m.totalGoldCount++
 		}
 	}
+	m.totalGoldUnused = m.totalGoldCount
 }
 
 func (m *gameMap) decreaseGold(i int) {
-	m.goldData[i]--
+	if m.getGoldOnTitle(i) > 0 {
+		m.goldData[i]--
+		m.totalGoldUnused--
+	}
+}
+
+func (m *gameMap) getUnusedGoldCount() int {
+	return m.totalGoldUnused
 }
 
 func (m *gameMap) getGoldOnTitle(i int) int {

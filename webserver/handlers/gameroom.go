@@ -18,6 +18,7 @@ type GameRoom struct {
 	subscribe   chan (chan<- Subscription)
 	unsubscribe chan (<-chan Event)
 	publish     chan Event
+	exit        chan bool
 	users       []user.User
 	game        game.Game
 	MaxUsers    int
@@ -40,6 +41,7 @@ func MakeGameRoom(hash string, title string, users int, mapSize int, timeLimit i
 		subscribe:   make(chan (chan<- Subscription), 10),
 		unsubscribe: make(chan (<-chan Event), 10),
 		publish:     make(chan Event, 10),
+		exit:        make(chan bool),
 		Hash:        hash,
 		Started:     false,
 		TotalReady:  0,
@@ -175,6 +177,7 @@ func (gr *GameRoom) Execute(u user.User, cmd Command) {
 		}
 		err = gr.game.MovePirate(pirate, card)
 		if err != nil {
+			gr.exit <- true
 			return
 		}
 	case "message":
@@ -263,6 +266,8 @@ func (gr *GameRoom) Run() {
 			for ch := subscribers.Front(); ch != nil; ch = ch.Next() {
 				ch.Value.(chan Event) <- makeEventFromGame(gameevent)
 			}
+		case <-gr.exit:
+			return
 		}
 	}
 }
