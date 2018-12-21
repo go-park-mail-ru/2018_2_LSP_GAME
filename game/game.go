@@ -98,24 +98,6 @@ func (g *Game) nextPlayer() {
 
 // MovePirate moves pirate to cardID (if it is possible)
 func (g *Game) MovePirate(pirateID int, cardID int) error {
-	// fmt.Println("Current player", g.currentPlayer)
-	// fmt.Println("Players:")
-	// for i := 0; i < len(g.players); i++ {
-	// 	fmt.Println("Player", i)
-	// 	fmt.Println("Score:", g.players[i].score)
-	// 	for j := 0; j < len(g.players[i].pirates); j++ {
-	// 		fmt.Println("Pirate:", j, g.players[i].pirates[j])
-	// 	}
-	// 	fmt.Println()
-	// }
-	// fmt.Println("Map:")
-	// for i := 0; i < g.gamemap.size*g.gamemap.size; i++ {
-	// 	fmt.Print(g.gamemap.mapData[i], "\t")
-	// 	if i%g.gamemap.size == g.gamemap.size-1 {
-	// 		fmt.Println()
-	// 	}
-	// }
-
 	g.stopTimer()
 
 	g.moveMutex.Lock()
