@@ -5,7 +5,7 @@ func makePosition(onship bool, id int) position {
 }
 
 type gameMap struct {
-	size            int
+	Size            int
 	mapData         []int
 	totalGoldCount  int
 	totalGoldUnused int
@@ -14,7 +14,7 @@ type gameMap struct {
 
 func makeMap(mapData []int, size int) gameMap {
 	result := gameMap{
-		size:            size,
+		Size:            size,
 		mapData:         mapData,
 		totalGoldCount:  0,
 		totalGoldUnused: 0,
@@ -25,7 +25,7 @@ func makeMap(mapData []int, size int) gameMap {
 }
 
 func (m *gameMap) countGoldData() {
-	for i := 0; i < m.size*m.size; i++ {
+	for i := 0; i < m.Size*m.Size; i++ {
 		if m.mapData[i] == GoldCard {
 			m.goldData[i] = 1
 			m.totalGoldCount++
@@ -66,60 +66,60 @@ func btoi(b bool) int {
 
 func (m *gameMap) getMoveableCards(playerID int, pos position) []position {
 	res := map[int]bool{}
-	shipPos := (m.size - 1) / 2 * (1 + btoi(playerID > 0)*m.size + btoi(playerID == 1)*m.size - btoi(playerID == 2) + btoi(playerID == 3))
+	shipPos := (m.Size - 1) / 2 * (1 + btoi(playerID > 0)*m.Size + btoi(playerID == 1)*m.Size - btoi(playerID == 2) + btoi(playerID == 3))
 	if pos.onship {
 		if playerID == 0 || playerID == 1 {
 			return []position{makePosition(false, shipPos-1), makePosition(false, shipPos), makePosition(false, shipPos+1)}
 		}
-		return []position{makePosition(false, shipPos-m.size), makePosition(false, shipPos), makePosition(false, shipPos+m.size)}
+		return []position{makePosition(false, shipPos-m.Size), makePosition(false, shipPos), makePosition(false, shipPos+m.Size)}
 	}
 	leftEmpty, rightEmpty, upEmpty, downEmpty := true, true, true, true
-	if pos.id%m.size == 0 {
+	if pos.id%m.Size == 0 {
 		leftEmpty = false
 	}
-	if (pos.id+1)%m.size == 0 {
+	if (pos.id+1)%m.Size == 0 {
 		rightEmpty = false
 	}
-	if pos.id < m.size {
+	if pos.id < m.Size {
 		upEmpty = false
 	}
-	if pos.id > m.size*m.size-m.size-1 {
+	if pos.id > m.Size*m.Size-m.Size-1 {
 		downEmpty = false
 	}
 	if leftEmpty {
 		res[pos.id-1] = true
 		if upEmpty {
-			res[pos.id-m.size-1] = true
+			res[pos.id-m.Size-1] = true
 		}
 		if downEmpty {
-			res[pos.id+m.size-1] = true
+			res[pos.id+m.Size-1] = true
 		}
 	}
 	if rightEmpty {
 		res[pos.id+1] = true
 		if upEmpty {
-			res[pos.id-m.size+1] = true
+			res[pos.id-m.Size+1] = true
 		}
 		if downEmpty {
-			res[pos.id+m.size+1] = true
+			res[pos.id+m.Size+1] = true
 		}
 	}
 	if upEmpty {
-		res[pos.id-m.size] = true
+		res[pos.id-m.Size] = true
 		if leftEmpty {
-			res[pos.id-m.size-1] = true
+			res[pos.id-m.Size-1] = true
 		}
 		if rightEmpty {
-			res[pos.id-m.size+1] = true
+			res[pos.id-m.Size+1] = true
 		}
 	}
 	if downEmpty {
-		res[pos.id+m.size] = true
+		res[pos.id+m.Size] = true
 		if leftEmpty {
-			res[pos.id+m.size-1] = true
+			res[pos.id+m.Size-1] = true
 		}
 		if rightEmpty {
-			res[pos.id+m.size+1] = true
+			res[pos.id+m.Size+1] = true
 		}
 	}
 

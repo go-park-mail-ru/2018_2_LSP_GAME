@@ -142,7 +142,7 @@ func convertGameRoomToResponse(gr *GameRoom) responseGameRoom {
 		Title:      gr.Title,
 		MaxPlayers: gr.MaxUsers,
 		TimeLimit:  gr.game.TimeLimit,
-		MapSize:    gr.game.Gamemap.size,
+		MapSize:    gr.game.Gamemap.Size,
 	}
 	return res
 }
