@@ -52,11 +52,11 @@ func MakeGameRoom(hash string, title string, users int, mapSize int, timeLimit i
 	distribution := []game.Distribution{}
 	switch mapSize {
 	case 7:
-		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 27), game.MakeDistribution(game.GoldCard, 12), game.MakeDistribution(game.KillCard, 10)}
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 35), game.MakeDistribution(game.GoldCard, 12), game.MakeDistribution(game.KillCard, 2)}
 	case 9:
-		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 50), game.MakeDistribution(game.GoldCard, 16), game.MakeDistribution(game.KillCard, 15)}
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 63), game.MakeDistribution(game.GoldCard, 16), game.MakeDistribution(game.KillCard, 2)}
 	default:
-		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 8), game.MakeDistribution(game.KillCard, 5)}
+		distribution = []game.Distribution{game.MakeDistribution(game.DefaultCard, 12), game.MakeDistribution(game.GoldCard, 11), game.MakeDistribution(game.KillCard, 2)}
 	}
 
 	c.game = game.MakeGame(distribution, users, 2, timeLimit)
